@@ -362,20 +362,20 @@ async def restore_database(file: UploadFile = File(...), current_user: models.Us
 
 # --- Admin Web Routes ---
 
-@app.get("/lund/dashboard")
+@app.get("/Osint-Api/dashboard")
 async def get_lund_dashboard_page():
     from fastapi.responses import FileResponse
     import os
-    file_path = "static/lund/dashboard.html"
+    file_path = "static/Osint-Api/dashboard.html"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Dashboard not available")
     return FileResponse(file_path)
 
-@app.get("/lund")
+@app.get("/Osint-Api")
 async def get_lund_admin_page():
     from fastapi.responses import FileResponse
     import os
-    file_path = "static/lund/index.html"
+    file_path = "static/Osint-Api/index.html"
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Admin page not available")
     return FileResponse(file_path)
@@ -396,7 +396,7 @@ async def ping():
 
 @app.get("/")
 async def root():
-    return {"message": "Premium Proxy API is active. Access /lund for admin."}
+    return {"message": "Premium Proxy API is active. Access /Osint-Api for admin."}
 
 # Static files - mount only if directories exist (optional for serverless)
 try:
@@ -414,7 +414,7 @@ except Exception as e:
 @app.api_route("/{rest_of_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_request(rest_of_path: str, request: Request, key: str = Query(None, description="API Access Key")):
     # 0. Bypass internal routes (just in case)
-    if rest_of_path.startswith("lund") or rest_of_path.startswith("static") or rest_of_path.startswith("admin"):
+    if rest_of_path.startswith("Osint-Api") or rest_of_path.startswith("static") or rest_of_path.startswith("admin"):
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
     ensure_db_initialized()
@@ -439,7 +439,7 @@ async def proxy_request(rest_of_path: str, request: Request, key: str = Query(No
                 break
         if not endpoint:
              if rest_of_path == "":
-                  return JSONResponse(content={"message": "Premium Proxy is Running. Access /lund for Admin Panel."})
+                  return JSONResponse(content={"message": "Premium Proxy is Running. Access /Osint-Api for Admin Panel."})
              raise HTTPException(status_code=404, detail="Proxy Endpoint Not Found")
 
         # --- PATH-BASED AUTHENTICATION LOGIC ---
@@ -464,7 +464,7 @@ async def proxy_request(rest_of_path: str, request: Request, key: str = Query(No
         if not key:
             # If no key, maybe homepage or 404? 
             if rest_of_path == "":
-                 return JSONResponse(content={"message": "Premium Proxy is Running. Access /lund for Admin Panel."})
+                 return JSONResponse(content={"message": "Premium Proxy is Running. Access /Osint-Api for Admin Panel."})
             raise HTTPException(status_code=403, detail="API Key Required")
 
         api_key_record = db.query(models.ApiKey).filter(models.ApiKey.key == key).first()
