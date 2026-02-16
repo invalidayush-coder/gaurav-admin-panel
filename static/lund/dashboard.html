@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Invalid - Control</title>
+    <link rel="stylesheet" href="/assets/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Mobile Responsive Tweaks */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            header>div {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            /* Grid to Stack */
+            div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Tables to Cards */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                margin-bottom: 1rem;
+                border-radius: 8px;
+                padding: 0.5rem;
+                background: rgba(255, 255, 255, 0.02);
+            }
+
+            td {
+                border: none;
+                position: relative;
+                padding-left: 50%;
+                padding: 0.5rem;
+                text-align: right;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            td:before {
+                position: absolute;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                font-weight: bold;
+                color: var(--text-muted);
+            }
+
+            /* Cell Labels */
+            #logTableBody td:nth-of-type(1):before {
+                content: "Time";
+            }
+
+            #logTableBody td:nth-of-type(2):before {
+                content: "Method";
+            }
+
+            #logTableBody td:nth-of-type(3):before {
+                content: "Path";
+            }
+
+            #logTableBody td:nth-of-type(4):before {
+                content: "Status";
+            }
+
+            #logTableBody td:nth-of-type(5):before {
+                content: "IP";
+            }
+
+            #logTableBody td:nth-of-type(6):before {
+                content: "Lat";
+            }
+
+            #epTableBody td:nth-of-type(1):before {
+                content: "Name";
+            }
+
+            #epTableBody td:nth-of-type(2):before {
+                content: "Target";
+            }
+
+            #epTableBody td:nth-of-type(3):before {
+                content: "Status";
+            }
+
+            #epTableBody td:nth-of-type(4):before {
+                content: "Actions";
+            }
+
+            #keyTableBody td:nth-of-type(1):before {
+                content: "Config";
+            }
+
+            #keyTableBody td:nth-of-type(2):before {
+                content: "Key";
+            }
+
+            #keyTableBody td:nth-of-type(3):before {
+                content: "Test URL";
+            }
+
+            #keyTableBody td:nth-of-type(4):before {
+                content: "Status";
+            }
+
+            #keyTableBody td:nth-of-type(5):before {
+                content: "Actions";
+            }
+
+            td {
+                padding-left: 0 !important;
+                text-align: left !important;
+                display: block !important;
+            }
+
+            td:before {
+                display: block;
+                position: static;
+                margin-bottom: 0.2rem;
+            }
+        }
+
+        /* Smooth Transitions */
+        .glass-card,
+        .btn,
+        .badge,
+        tr,
+        td {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+    <script>
+        if (!localStorage.getItem('access_token')) { window.location.href = '/lund'; }
+        document.documentElement.style.display = 'none';
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('access_token')) { document.documentElement.style.display = 'block'; }
+        });
+    </script>
+</head>
+
+<body class="animate-fade">
+    <header>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div
+                style="width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: grid; place-items: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+            </div>
+            <h1 style="font-size: 1.25rem; font-family: 'Share Tech Mono', monospace;">Team Invalid</h1>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span id="serverStatus" class="badge badge-success"><span class="status-dot status-active"></span>Server
+                Online</span>
+            <button onclick="logout()" class="btn btn-danger" style="padding: 0.5rem 1rem;">Logout</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Dashboard Stats -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Active Endpoints
+                </div>
+                <div id="statEndpoints" style="font-size: 2rem; font-weight: 700;">0</div>
+            </div>
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Total Keys</div>
+                <div id="statKeys" style="font-size: 2rem; font-weight: 700;">0</div>
+            </div>
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">Security Status</div>
+                <div style="color: var(--success); font-weight: 600;">ACTIVE-ENCRYPTED</div>
+            </div>
+        </div>
+
+        <!-- Live Traffic Grid -->
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Live Traffic Monitor</h2>
+                <div
+                    style="font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="status-dot status-active" style="animation: pulse 2s infinite;"></span>
+                    Real-time (Auto-refresh)
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Status</th>
+                        <th>Client IP</th>
+                        <th>Latency</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Endpoints Grid -->
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>API Identities</h2>
+                <button onclick="resetEpModal(); showModal('epModal')" class="btn btn-primary">+ Add New
+                    Identity</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Config Name</th>
+                        <th>Target Source</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="epTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Keys Grid -->
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="flex-between" style="margin-bottom: 1.5rem;">
+                <h2>Private Access Keys</h2>
+                <button onclick="showModal('keyModal')" class="btn btn-primary">+ Create Access Key</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Config Link</th>
+                        <th>Key</th>
+                        <th>Test URL</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="keyTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Settings Grid -->
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <h2 style="margin-bottom: 1.5rem;">Security Settings</h2>
+            <button onclick="showModal('passwordModal')" class="btn btn-primary"
+                style="background: var(--primary);">Change Admin Password</button>
+        </div>
+
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">
+            <p>Admin Core v2.0 • Premium Edition</p>
+            <p style="font-size: 0.75rem; margin-top: 0.5rem;">Developed with ❤️ by <span
+                    style="color: var(--primary);">⚡ @AV_AYUSH & @AyushIsInvalid 🔥</span></p>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="epModal" class="modal">
+        <div class="glass-card modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Configure Endpoint</h2>
+            <input type="hidden" id="epId">
+            <!-- 1. Config Name -->
+            <div class="form-group">
+                <label>Config Name (Internal Label)</label>
+                <div class="input-group">
+                    <span class="input-group-text">/</span>
+                    <input type="text" id="epPath" placeholder="e.g. num">
+                </div>
+                <small class="text-muted">This becomes your prefix:
+                    <code>localhost:8000/<strong>num</strong>/...</code></small>
+            </div>
+
+            <!-- 2. Source URL -->
+            <div class="form-group">
+                <label>Target API Link</label>
+                <input type="text" id="epUrl" placeholder="Paste ANY link from the target API here...">
+                <small class="text-muted">
+                    We will automatically detect the domain (e.g., <code>https://api.example.com</code>) and set it as
+                    the base.
+                </small>
+            </div>
+
+            <!-- 3. Description -->
+            <div class="form-group">
+                <label>Description (Optional)</label>
+                <input type="text" id="epDesc" placeholder="e.g. My Vercel API">
+            </div>
+
+            <div class="modal-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button class="btn btn-outline" onclick="hideModal('epModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createEndpoint()" id="epSubmitBtn">Save Config</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simplified Logic: Auto-extract domain on save
+        async function createEndpoint() {
+            const btn = document.getElementById('epSubmitBtn');
+            const id = document.getElementById('epId').value;
+            const path = document.getElementById('epPath').value;
+            let urlInput = document.getElementById('epUrl').value;
+            const desc = document.getElementById('epDesc').value;
+
+            if (!path || !urlInput) return alert("All fields are required.");
+
+            // AUTO-DETECT DOMAIN LOGIC
+            try {
+                const urlObj = new URL(urlInput);
+                // We ALWAYS save just the origin (Base URL) for maximum flexibility
+                // This allows the user to append ANY path they want later.
+                urlInput = urlObj.origin;
+            } catch (e) {
+                // If it fails (e.g. user typed just 'google.com'), we try adding https://
+                if (!urlInput.startsWith('http')) {
+                    try {
+                        const urlObj = new URL('https://' + urlInput);
+                        urlInput = urlObj.origin;
+                    } catch (e2) {
+                        return alert("Invalid URL. Please paste a full link starting with https://");
+                    }
+                }
+            }
+
+            btn.disabled = true; btn.innerText = "Processing...";
+            const endpoint = id ? `/admin/endpoints/${id}` : '/admin/endpoints';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetchWithAuth(endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path, source_url_template: urlInput, description: desc })
+                });
+                if (res.ok) { hideModal('epModal'); loadData(); }
+                else { const d = await res.json(); alert(d.detail || "Setup failed."); }
+            } finally { btn.disabled = false; btn.innerText = "Save Config"; }
+        }
+    </script>
+
+    <div id="keyModal" class="modal">
+        <div class="glass-card modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Create Access Key</h2>
+            <div class="form-group">
+                <label>Identity Attachment</label>
+                <select id="keyEndpoint"></select>
+            </div>
+            <div class="form-group">
+                <label>Key Secret</label>
+                <input type="text" id="newKey" placeholder="e.g. premium_user_123">
+            </div>
+            <div class="form-group">
+                <label>Expiry Period (Days)</label>
+                <input type="number" id="newExpiry" value="0">
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Use 0 for lifetime access.
+                </p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button id="keySubmitBtn" onclick="createKey()" class="btn btn-primary">Generate Key</button>
+                <button onclick="hideModal('keyModal')" class="btn btn-danger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editKeyModal" class="modal">
+        <div class="glass-card modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Edit Access Key</h2>
+            <input type="hidden" id="editKeyId">
+            <div class="form-group">
+                <label>Add Days (0 = Lifetime)</label>
+                <input type="number" id="editKeyExpiry" placeholder="Enter new days from now">
+                <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    This will reset the expiry to X days from NOW.
+                </p>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button onclick="updateKey()" class="btn btn-primary">Update</button>
+                <button onclick="hideModal('editKeyModal')" class="btn btn-danger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="passwordModal" class="modal">
+        <div class="glass-card modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Change Password</h2>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPassword">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button onclick="changePassword()" class="btn btn-primary">Update</button>
+                <button onclick="hideModal('passwordModal')" class="btn btn-danger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('access_token');
+        const API_BASE = window.location.origin;
+
+        async function fetchWithAuth(url, options = {}) {
+            options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+            try {
+                const response = await fetch(url, options);
+                if (response.status === 401) { logout(); }
+                return response;
+            } catch (err) {
+                document.getElementById('serverStatus').innerHTML = '<span class="status-dot" style="background:var(--danger)"></span>Offline';
+                document.getElementById('serverStatus').className = 'badge badge-danger';
+                throw err;
+            }
+        }
+
+        async function loadData() {
+            try {
+                const epRes = await fetchWithAuth('/admin/endpoints');
+                const endpoints = await epRes.json();
+
+                document.getElementById('statEndpoints').innerText = endpoints.length;
+
+                const epTbody = document.getElementById('epTableBody');
+                epTbody.innerHTML = endpoints.map(e => `
+                    <tr>
+                        <td><code style="color:var(--primary); font-weight:700;">${e.path}</code></td>
+                        <td><div style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.8rem;">${e.source_url_template}</div></td>
+                        <td><span class="badge badge-success">Active</span></td>
+                        <td>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button onclick="editEndpoint(${e.id}, '${e.path}', '${e.source_url_template}', '${e.description}')" class="btn" style="padding:0.25rem 0.5rem; background:rgba(255,255,255,0.05);">Edit</button>
+                                <button onclick="deleteEndpoint(${e.id})" class="btn btn-danger" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                const select = document.getElementById('keyEndpoint');
+                select.innerHTML = endpoints.map(e => `<option value="${e.id}">${e.path}</option>`).join('');
+
+                const keyRes = await fetchWithAuth('/admin/keys');
+                const keys = await keyRes.json();
+                document.getElementById('statKeys').innerText = keys.length;
+
+                const keyTbody = document.getElementById('keyTableBody');
+                keyTbody.innerHTML = keys.length === 0 ? '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No keys active.</td></tr>' :
+                    keys.map(k => {
+                        const baseUrl = `${window.location.origin}/${k.endpoint_path}`;
+                        const testUrlDisplay = `${baseUrl}/<span class="text-warning" style="font-weight:bold;">${k.key}</span>/<span class="text-white-50">[path]</span>`;
+                        const clipUrl = `${baseUrl}/${k.key}/`;
+
+                        // Calculate Days Left
+                        let expiryText = "Lifetime";
+                        if (k.expiry_date) {
+                            const now = new Date();
+                            const exp = new Date(k.expiry_date + 'Z');
+                            const diffTime = exp - now;
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            expiryText = diffDays > 0 ? `${diffDays} Days` : "Expired";
+                        }
+
+                        const row = `
+                    <tr>
+                        <td><span class="badge bg-primary">${k.endpoint_path}</span></td>
+                        <td><code class="text-warning">${k.key}</code></td>
+                        <td>
+                            <a href="#" onclick="navigator.clipboard.writeText('${clipUrl}'); alert('Copied base URL! Now append your path.'); return false;" class="text-decoration-none small" style="color: #fff;">
+                                ${testUrlDisplay} <i class="fas fa-copy ml-2"></i>
+                            </a>
+                        </td>
+                        <td><span class="badge bg-secondary">${expiryText}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditKeyModal(${k.id}, ${k.is_active}, ${k.expiry_days || 0})">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteKey(${k.id})" style="margin-left:5px;">Revoke</button>
+                        </td>
+                    </tr>
+                `;
+                        return row;
+                    }).join('');
+
+                await loadLogs();
+            } catch (err) {
+                console.error("Load failed:", err);
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetchWithAuth('/admin/stats/logs?limit=10');
+                if (!res.ok) return;
+                const logs = await res.json();
+
+                const tbody = document.getElementById('logTableBody');
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No traffic recorded yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(l => {
+                    const statusClass = l.status_code >= 200 && l.status_code < 300 ? 'badge-success' : 'badge-danger';
+                    const time = new Date(l.timestamp + 'Z').toLocaleTimeString(); // Append Z for UTC
+                    return `
+                    <tr>
+                        <td style="font-size:0.8rem; color:var(--text-muted);">${time}</td>
+                        <td><span class="badge" style="background:rgba(255,255,255,0.1);">${l.method}</span></td>
+                        <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:monospace; font-size:0.8rem;">${l.path}</td>
+                        <td><span class="badge ${statusClass}">${l.status_code}</span></td>
+                        <td style="font-size:0.8rem;">${l.client_ip}</td>
+                        <td style="font-size:0.8rem;">${l.latency_ms}ms</td>
+                    </tr>
+                `}).join('');
+            } catch (e) { console.error("Log fetch failed", e); }
+        }
+
+        function editEndpoint(id, path, url, desc) {
+            document.getElementById('epId').value = id;
+            document.getElementById('epPath').value = path;
+            document.getElementById('epUrl').value = url;
+            document.getElementById('epDesc').value = desc;
+            showModal('epModal');
+        }
+
+        async function deleteEndpoint(id) {
+            if (!confirm("Are you sure? This will delete the identity and ALL linked access keys.")) return;
+            const res = await fetchWithAuth(`/admin/endpoints/${id}`, { method: 'DELETE' });
+            if (res.ok) loadData();
+        }
+
+        async function createKey() {
+            const btn = document.getElementById('keySubmitBtn');
+            const key = document.getElementById('newKey').value;
+            const epId = document.getElementById('keyEndpoint').value;
+            const expiry = parseInt(document.getElementById('newExpiry').value);
+
+            if (!key || !epId) return alert("Key and Attachment are required.");
+            btn.disabled = true; btn.innerText = "Generating...";
+
+            try {
+                const res = await fetchWithAuth('/admin/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, endpoint_id: parseInt(epId), expiry_days: expiry, description: "" })
+                });
+                if (res.ok) { hideModal('keyModal'); loadData(); }
+                else { const d = await res.json(); alert(d.detail || "Key gen failed."); }
+            } finally { btn.disabled = false; btn.innerText = "Generate Key"; }
+        }
+
+        async function deleteKey(id) {
+            if (!confirm("Revoke this access key?")) return;
+            const res = await fetchWithAuth(`/admin/keys/${id}`, { method: 'DELETE' });
+            if (res.ok) loadData();
+        }
+
+        function resetEpModal() {
+            document.getElementById('epId').value = '';
+            document.getElementById('epPath').value = '';
+            document.getElementById('epUrl').value = '';
+            document.getElementById('epDesc').value = '';
+        }
+
+        async function changePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (!newPassword) return alert("Please enter a new password");
+
+            try {
+                const res = await fetchWithAuth('/admin/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: newPassword })
+                });
+
+                if (res.ok) {
+                    alert("Password updated successfully!");
+                    hideModal('passwordModal');
+                    document.getElementById('newPassword').value = '';
+                } else {
+                    const data = await res.json();
+                    alert("Error: " + (data.detail || "Update failed"));
+                }
+            } catch (err) {
+                console.error("Password update error", err);
+                alert("Failed to update password");
+            }
+        }
+
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+        function logout() { localStorage.removeItem('access_token'); window.location.href = '/lund'; }
+
+        function openEditKeyModal(id, isActive, currentExpiry) {
+            document.getElementById('editKeyId').value = id;
+            document.getElementById('editKeyExpiry').value = ''; // Reset to empty
+            showModal('editKeyModal');
+        }
+
+        async function updateKey() {
+            const id = document.getElementById('editKeyId').value;
+            const expiry = parseInt(document.getElementById('editKeyExpiry').value);
+
+            if (isNaN(expiry)) return alert("Please enter valid days");
+
+            try {
+                const res = await fetchWithAuth(`/admin/keys/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expiry_days: expiry, is_active: true })
+                });
+
+                if (res.ok) {
+                    alert("Key updated successfully!");
+                    hideModal('editKeyModal');
+                    loadData();
+                } else {
+                    const data = await res.json();
+                    alert("Error: " + (data.detail || "Update failed"));
+                }
+            } catch (err) {
+                console.error("Update failed", err);
+                alert("Failed to update key");
+            }
+        }
+
+        // Initial Load
+        loadData();
+        setInterval(loadLogs, 3000); // Auto-refresh logs
+    </script>
+</body>
+
+</html>
